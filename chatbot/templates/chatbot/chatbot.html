@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IIT Indore Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #e0f7fa, #f0f4ff);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #003366;
+            margin-bottom: 10px;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-links a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        #chatbox {
+            border: 1px solid #ccc;
+            padding: 15px;
+            height: 350px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin-bottom: 12px;
+        }
+
+        .user-msg {
+            color: #003366;
+        }
+
+        .bot-msg {
+            color: #00695c;
+        }
+
+        #input-form {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        #question {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button[type="submit"] {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 30px 15px;
+                padding: 20px;
+            }
+
+            #input-form {
+                flex-direction: column;
+            }
+
+            #question, button[type="submit"] {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💬 IIT Indore Chatbot</h1>
+
+        <div class="nav-links">
+            <a href="{% url 'home' %}">🏠 Home</a> |
+            <a href="{% url 'logout' %}">🚪 Logout</a>
+        </div>
+
+        <div id="chatbox"></div>
+
+        <form id="input-form" method="post" action="">
+            {% csrf_token %}
+            <input type="text" id="question" name="question" placeholder="Ask something about IIT Indore..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('input-form');
+        const chatbox = document.getElementById('chatbox');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const question = formData.get('question');
+
+            chatbox.innerHTML += `<div class="message user-msg"><strong>You:</strong> ${question}</div>`;
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                chatbox.innerHTML += `<div class="message bot-msg"><strong>Error:</strong> ${data.error}</div>`;
+            } else {
+                chatbox.innerHTML += `<div class="message bot-msg"><strong>Bot:</strong> ${data.response}</div>`;
+            }
+
+            chatbox.scrollTop = chatbox.scrollHeight;
+            form.reset();
+        });
+    </script>
+</body>
+</html>
