@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IIT Indore Chatbot - Home</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #f0f4ff, #e0f7fa);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 60px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .app-icon {
+            width: 70px;
+            height: 70px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            color: #003366;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .welcome {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 25px;
+        }
+
+        .nav-links a {
+            display: block;
+            margin: 10px 0;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/static/images/reminder.jpeg" alt="IIT Indore Chatbot Icon" class="app-icon">
+        <h1>Welcome to IIT Indore Chatbot</h1>
+        <div class="welcome">Logged in as: {{ request.session.user_roll_number }}</div>
+        <div class="nav-links">
+            <a href="{% url 'chatbot' %}">💬 Chat with Bot</a>
+            <a href="{% url 'navigation_home' %}">🧭 Navigation</a>
+            <a href="{% url 'reminder' %}">🗓️ Manage Reminders</a>
+            <a href="{% url 'logout' %}">🚪 Logout</a>
+        </div>
+    </div>
+</body>
+</html>
