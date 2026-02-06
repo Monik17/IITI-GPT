@@ -74,14 +74,14 @@ TAVILY_API_KEY=your_tavily_key
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Siddharththakur3617/IITI-GPT.git
+git clone https://github.com/Monik17/IITI-GPT
 cd IITI-GPT
 ```
 
 ### 2. Set up Virtual Environment
 
 ```bash
-git clone https://github.com/Siddharththakur3617/IITI-GPT.git
+git clone https://github.com/Monik17/IITI-GPT
 cd IITI-GPT
 ```
 
