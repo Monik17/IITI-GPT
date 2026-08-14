@@ -40,7 +40,7 @@ def web_search(state):
     logger.info("---WEB SEARCH---")
     question = state.question
     
-    web_search_tool = TavilySearchResults(k=3, tavily_api_key="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")
+    web_search_tool = TavilySearchResults(k=3, tavily_api_key=settings.TAVILY_API_KEY)
     docs = web_search_tool.invoke({"query": question})
 
     # docs = [Document(page_content=f"Web result for {question} from IIT Indore site")]
@@ -71,5 +71,7 @@ workflow.add_node("web_search", web_search)
 workflow.add_node("grade_documents", grade_documents)
 workflow.add_node("generate", generate)
 workflow.add_conditional_edges(START, route_question, {"web_search": "web_search"})
-workflow.add_edge("web_search", "generate")
-workflow.compile()
+workflow.add_edge("web_search", "grade_documents")
+workflow.add_edge("grade_documents", "generate")
+workflow.add_edge("generate", END)
+workflow = workflow.compile()
