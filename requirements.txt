@@ -9,3 +9,5 @@ python-dotenv==1.0.1
 folium==0.20.0
 fuzzywuzzy==0.18.0
 uvicorn==0.30.5
+chromadb
+sentence-transformers
