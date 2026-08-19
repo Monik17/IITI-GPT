@@ -1,7 +1,6 @@
 # chatbot/views.py
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
 
 from .utils import workflow
 
@@ -16,18 +15,45 @@ def chatbot_view(request):
         question = request.POST.get("question", "").strip()
 
         if question:
+            # Get conversation history from the current Django session
+            chat_history = request.session.get("chat_history", [])
+
             # Initial LangGraph state
             state = {
-                "question": question
+                "question": question,
+                "chat_history": chat_history
             }
 
-            # Run the workflow and collect the state updates
+            # Run workflow
             for output in workflow.stream(state):
                 for key, value in output.items():
                     state.update(value)
 
+            # Get generated answer
+            response = state.get(
+                "generation",
+                "No response available"
+            )
+
+            # Save this exchange to session history
+            chat_history.append({
+                "role": "user",
+                "content": question
+            })
+
+            chat_history.append({
+                "role": "assistant",
+                "content": response
+            })
+
+            # Keep only the most recent 10 messages
+            request.session["chat_history"] = chat_history[-10:]
+
+            # Explicitly save the session
+            request.session.modified = True
+
             return JsonResponse({
-                "response": state.get("generation", "No response available")
+                "response": response
             })
 
         return JsonResponse({
