@@ -148,6 +148,58 @@ Latest user message:
 contextualize_chain = contextualize_prompt | llm
 
 
+# ============================================================
+# 3. LLM QUESTION ROUTER
+# ============================================================
+
+router_prompt = ChatPromptTemplate.from_messages([
+    (
+        "system",
+        """You are the routing classifier for IITI-GPT.
+
+Your job is to decide where the user's question should be answered from.
+
+Choose exactly ONE:
+
+RAG
+WEB
+
+Choose RAG when:
+- The question is about IIT Indore's relatively stable information.
+- The local IIT Indore knowledge base is likely to contain the answer.
+- The question concerns IIT Indore programs, departments, admissions,
+  fees, faculty, research, campus facilities, rules, courses,
+  infrastructure, or institutional information.
+- The question does not require information that changes frequently.
+
+Choose WEB when:
+- The question requires current or recent information.
+- The user asks about today, currently, latest, recent, this week,
+  this month, live information, breaking news, or current events.
+- The information is likely to have changed after the local knowledge
+  base was created.
+- The question asks about current weather, current announcements,
+  current events, recent news, or other time-sensitive information.
+- The question is about a topic outside the IIT Indore knowledge base
+  where fresh web information is more appropriate.
+
+Important:
+- Prefer RAG for IIT Indore institutional questions when current
+  information is not explicitly required.
+- Prefer WEB when freshness is important.
+- Do not answer the question.
+- Return ONLY RAG or WEB.
+"""
+    ),
+    (
+        "human",
+        """User question:
+{question}"""
+    )
+])
+
+router_chain = router_prompt | llm
+
 def contextualize_question(state):
     logger.info("---CONTEXTUALIZE QUESTION---")
 
@@ -248,20 +300,33 @@ def grade_documents(state):
 # ============================================================
 
 def route_question(state):
-    logger.info("---ROUTE QUESTION---")
+    logger.info("---LLM ROUTE QUESTION---")
 
     question = state["question"]
 
-    if rag.is_recency_sensitive(question):
-        logger.info(
-            "Routing to web_search (recency-sensitive question)"
-        )
-        return "web_search"
+    raw = router_chain.invoke({
+        "question": question
+    })
 
-    logger.info(
-        "Routing to vectorstore (local IIT Indore knowledge base)"
+    decision = (
+        raw.content.strip().upper()
+        if hasattr(raw, "content")
+        else str(raw).strip().upper()
     )
 
+    # Clean possible accidental extra text
+    if "WEB" in decision:
+        decision = "WEB"
+    else:
+        decision = "RAG"
+
+    logger.info("LLM routing decision: %s", decision)
+
+    if decision == "WEB":
+        logger.info("Routing to Tavily web search")
+        return "web_search"
+
+    logger.info("Routing to local ChromaDB RAG")
     return "vectorstore"
 
 
