@@ -1,33 +1,24 @@
 # chatbot/utils.py
 import logging
-
 from django.conf import settings
 from langchain.prompts import ChatPromptTemplate
 from langchain_cohere import ChatCohere
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langgraph.graph import StateGraph, END, START
-
 from . import rag
 from .models import GraphState
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-llm = ChatCohere(
-    cohere_api_key=settings.COHERE_API_KEY,
-    model="command-a-03-2025"
-)
-
+llm = ChatCohere(cohere_api_key=settings.COHERE_API_KEY, model="command-a-03-2025")
 
 # ============================================================
 # 1. CHECK WHETHER CONVERSATION MEMORY IS SUFFICIENT
 # ============================================================
 
 memory_check_prompt = ChatPromptTemplate.from_messages([
-    (
-        "system",
-        """You are a conversation-memory classifier.
+    ("system", """You are a conversation-memory classifier.
 
 Determine whether the conversation history contains enough
 information to answer the user's latest message WITHOUT using
@@ -57,37 +48,27 @@ Use RETRIEVE when:
   provided in the conversation.
 - The question requires current/live information.
 
-Do not answer the question. Return only MEMORY or RETRIEVE."""
-    ),
-    (
-        "human",
-        """Conversation history:
+Do not answer the question. Return only MEMORY or RETRIEVE."""),
+    ("human", """Conversation history:
 {chat_history}
 
 Latest user message:
-{question}"""
-    )
+{question}""")
 ])
 
 memory_check_chain = memory_check_prompt | llm
 
-
 def check_memory(state):
     logger.info("---CHECK CONVERSATION MEMORY---")
-
     question = state["question"]
     chat_history = state.get("chat_history", [])
 
-    # No history means external retrieval is required
     if not chat_history:
         logger.info("No conversation history → RETRIEVE")
-        return {
-            "memory_sufficient": False
-        }
+        return {"memory_sufficient": False}
 
     history_text = "\n".join(
-        f"{message['role']}: {message['content']}"
-        for message in chat_history
+        f"{message['role']}: {message['content']}" for message in chat_history
     )
 
     raw = memory_check_chain.invoke({
@@ -101,7 +82,6 @@ def check_memory(state):
         else str(raw).strip().upper()
     )
 
-    # Safety: only accept MEMORY explicitly
     memory_sufficient = decision == "MEMORY"
 
     logger.info(
@@ -109,9 +89,7 @@ def check_memory(state):
         "MEMORY" if memory_sufficient else "RETRIEVE"
     )
 
-    return {
-        "memory_sufficient": memory_sufficient
-    }
+    return {"memory_sufficient": memory_sufficient}
 
 
 # ============================================================
@@ -119,9 +97,7 @@ def check_memory(state):
 # ============================================================
 
 contextualize_prompt = ChatPromptTemplate.from_messages([
-    (
-        "system",
-        """You are a question contextualizer for an IIT Indore chatbot.
+    ("system", """You are a question contextualizer for an IIT Indore chatbot.
 
 Rewrite the latest user message into a standalone question when
 previous conversation is necessary to understand it.
@@ -133,19 +109,42 @@ Rules:
 - If the user provides a new statement or fact, return that statement
   unchanged.
 - Do not answer the user.
-- Return ONLY the rewritten question or original message."""
-    ),
-    (
-        "human",
-        """Conversation history:
+- Return ONLY the rewritten question or original message."""),
+    ("human", """Conversation history:
 {chat_history}
 
 Latest user message:
-{question}"""
-    )
+{question}""")
 ])
 
 contextualize_chain = contextualize_prompt | llm
+
+def contextualize_question(state):
+    logger.info("---CONTEXTUALIZE QUESTION---")
+    question = state["question"]
+    chat_history = state.get("chat_history", [])
+
+    if not chat_history:
+        return {"question": question}
+
+    history_text = "\n".join(
+        f"{message['role']}: {message['content']}" for message in chat_history
+    )
+
+    raw = contextualize_chain.invoke({
+        "chat_history": history_text,
+        "question": question
+    })
+
+    contextualized_question = (
+        raw.content.strip()
+        if hasattr(raw, "content")
+        else str(raw).strip()
+    )
+
+    logger.info("Contextualized question: %s", contextualized_question)
+
+    return {"question": contextualized_question}
 
 
 # ============================================================
@@ -153,9 +152,7 @@ contextualize_chain = contextualize_prompt | llm
 # ============================================================
 
 router_prompt = ChatPromptTemplate.from_messages([
-    (
-        "system",
-        """You are the routing classifier for IITI-GPT.
+    ("system", """You are the routing classifier for IITI-GPT.
 
 Your job is to decide where the user's question should be answered from.
 
@@ -189,53 +186,12 @@ Important:
 - Prefer WEB when freshness is important.
 - Do not answer the question.
 - Return ONLY RAG or WEB.
-"""
-    ),
-    (
-        "human",
-        """User question:
-{question}"""
-    )
+"""),
+    ("human", """User question:
+{question}""")
 ])
 
 router_chain = router_prompt | llm
-
-def contextualize_question(state):
-    logger.info("---CONTEXTUALIZE QUESTION---")
-
-    question = state["question"]
-    chat_history = state.get("chat_history", [])
-
-    if not chat_history:
-        return {
-            "question": question
-        }
-
-    history_text = "\n".join(
-        f"{message['role']}: {message['content']}"
-        for message in chat_history
-    )
-
-    raw = contextualize_chain.invoke({
-        "chat_history": history_text,
-        "question": question
-    })
-
-    contextualized_question = (
-        raw.content.strip()
-        if hasattr(raw, "content")
-        else str(raw).strip()
-    )
-
-    logger.info(
-        "Contextualized question: %s",
-        contextualized_question
-    )
-
-    return {
-        "question": contextualized_question
-    }
-
 
 # ============================================================
 # 3. RETRIEVAL
@@ -243,15 +199,9 @@ def contextualize_question(state):
 
 def retrieve(state):
     logger.info("---RETRIEVE---")
-
     question = state["question"]
-
     documents = rag.retrieve_documents(question)
-
-    return {
-        "question": question,
-        "documents": documents
-    }
+    return {"question": question, "documents": documents}
 
 
 # ============================================================
@@ -260,7 +210,6 @@ def retrieve(state):
 
 def web_search(state):
     logger.info("---WEB SEARCH---")
-
     question = state["question"]
 
     web_search_tool = TavilySearchResults(
@@ -268,14 +217,8 @@ def web_search(state):
         tavily_api_key=settings.TAVILY_API_KEY
     )
 
-    docs = web_search_tool.invoke({
-        "query": question
-    })
-
-    return {
-        "question": question,
-        "documents": docs
-    }
+    docs = web_search_tool.invoke({"query": question})
+    return {"question": question, "documents": docs}
 
 
 # ============================================================
@@ -284,11 +227,8 @@ def web_search(state):
 
 def grade_documents(state):
     logger.info("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
-
     documents = state.get("documents", [])
-
     filtered_docs = rag.filter_relevant(documents)
-
     return {
         "question": state["question"],
         "documents": filtered_docs
@@ -301,12 +241,9 @@ def grade_documents(state):
 
 def route_question(state):
     logger.info("---LLM ROUTE QUESTION---")
-
     question = state["question"]
 
-    raw = router_chain.invoke({
-        "question": question
-    })
+    raw = router_chain.invoke({"question": question})
 
     decision = (
         raw.content.strip().upper()
@@ -314,7 +251,6 @@ def route_question(state):
         else str(raw).strip().upper()
     )
 
-    # Clean possible accidental extra text
     if "WEB" in decision:
         decision = "WEB"
     else:
@@ -336,9 +272,7 @@ def route_question(state):
 
 def decide_to_generate(state):
     logger.info("---ASSESS GRADED DOCUMENTS---")
-
     documents = state.get("documents", [])
-
     return "generate" if documents else "web_search"
 
 
@@ -347,9 +281,7 @@ def decide_to_generate(state):
 # ============================================================
 
 answer_prompt = ChatPromptTemplate.from_messages([
-    (
-        "system",
-        """You are IITI-GPT, a helpful assistant for IIT Indore
+    ("system", """You are IITI-GPT, a helpful assistant for IIT Indore
 students, faculty, and prospective applicants.
 
 You have two possible information sources:
@@ -383,20 +315,14 @@ Conversation history:
 {chat_history}
 
 Retrieved context:
-{context}"""
-    ),
-    (
-        "human",
-        "{question}"
-    )
+{context}"""),
+    ("human", "{question}")
 ])
 
 answer_chain = answer_prompt | llm
 
-
 def generate(state):
     logger.info("---GENERATE---")
-
     question = state["question"]
     documents = state.get("documents", [])
     chat_history = state.get("chat_history", [])
@@ -404,8 +330,7 @@ def generate(state):
     context = rag.build_context(documents)
 
     history_text = "\n".join(
-        f"{message['role']}: {message['content']}"
-        for message in chat_history
+        f"{message['role']}: {message['content']}" for message in chat_history
     )
 
     raw = answer_chain.invoke({
@@ -433,57 +358,22 @@ def generate(state):
 
 workflow = StateGraph(GraphState)
 
-workflow.add_node(
-    "check_memory",
-    check_memory
-)
+workflow.add_node("check_memory", check_memory)
+workflow.add_node("contextualize_question", contextualize_question)
+workflow.add_node("retrieve", retrieve)
+workflow.add_node("web_search", web_search)
+workflow.add_node("grade_documents", grade_documents)
+workflow.add_node("generate", generate)
 
-workflow.add_node(
-    "contextualize_question",
-    contextualize_question
-)
+workflow.add_edge(START, "check_memory")
 
-workflow.add_node(
-    "retrieve",
-    retrieve
-)
-
-workflow.add_node(
-    "web_search",
-    web_search
-)
-
-workflow.add_node(
-    "grade_documents",
-    grade_documents
-)
-
-workflow.add_node(
-    "generate",
-    generate
-)
-
-
-# START → MEMORY CHECK
-workflow.add_edge(
-    START,
-    "check_memory"
-)
-
-
-# MEMORY CHECK
 def route_after_memory(state):
     if state.get("memory_sufficient", False):
-        logger.info(
-            "Conversation memory is sufficient → GENERATE"
-        )
+        logger.info("Conversation memory is sufficient → GENERATE")
         return "generate"
 
-    logger.info(
-        "Conversation memory insufficient → CONTEXTUALIZE"
-    )
+    logger.info("Conversation memory insufficient → CONTEXTUALIZE")
     return "contextualize"
-
 
 workflow.add_conditional_edges(
     "check_memory",
@@ -494,8 +384,6 @@ workflow.add_conditional_edges(
     }
 )
 
-
-# CONTEXTUALIZE → CHROMA/TAVILY ROUTER
 workflow.add_conditional_edges(
     "contextualize_question",
     route_question,
@@ -505,13 +393,7 @@ workflow.add_conditional_edges(
     }
 )
 
-
-# CHROMA
-workflow.add_edge(
-    "retrieve",
-    "grade_documents"
-)
-
+workflow.add_edge("retrieve", "grade_documents")
 
 workflow.add_conditional_edges(
     "grade_documents",
@@ -522,19 +404,7 @@ workflow.add_conditional_edges(
     }
 )
 
-
-# TAVILY
-workflow.add_edge(
-    "web_search",
-    "generate"
-)
-
-
-# GENERATE → END
-workflow.add_edge(
-    "generate",
-    END
-)
-
+workflow.add_edge("web_search", "generate")
+workflow.add_edge("generate", END)
 
 workflow = workflow.compile()
