@@ -35,6 +35,13 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 COHERE_API_KEY = os.getenv('COHERE_API_KEY')
 TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 
+LANGCHAIN_TRACING_V2 = os.getenv('LANGCHAIN_TRACING_V2', 'false')
+LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
+LANGCHAIN_PROJECT = os.getenv('LANGCHAIN_PROJECT', 'IITI-GPT')
+LANGCHAIN_ENDPOINT = os.getenv(
+    'LANGCHAIN_ENDPOINT',
+    'https://api.smith.langchain.com'
+)
 # Application definition
 
 INSTALLED_APPS = [
