@@ -1,165 +1,499 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>IIT Indore Chatbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #e0f7fa, #f0f4ff);
-            margin: 0;
+        .bubble p {
+            margin: 0 0 10px 0;
+            line-height: 1.6;
+        }
+
+        .bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .bubble strong {
+            font-weight: 700;
+        }
+
+        .bubble em {
+            font-style: italic;
+        }
+
+        .bubble code {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 0.9em;
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .bubble ul,
+        .bubble ol {
+            margin: 8px 0 12px 22px;
             padding: 0;
         }
 
-        .container {
-            max-width: 700px;
-            margin: 50px auto;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        .bubble li {
+            margin-bottom: 5px;
+            line-height: 1.5;
         }
-
-        h1 {
-            text-align: center;
-            color: #003366;
-            margin-bottom: 10px;
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            margin: 12px 0;
+            border-radius: 8px;
         }
-
-        .nav-links {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .nav-links a {
-            color: #007bff;
-            text-decoration: none;
-            margin: 0 10px;
+        .bubble table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 14px;
+            min-width: 400px;
         }
-
-        .nav-links a:hover {
+        .bubble th,
+        .bubble td {
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            padding: 9px 11px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .bubble th {
+            font-weight: 700;
+        }
+        .bubble a {
+            font-weight: 600;
             text-decoration: underline;
+            word-break: break-word;
         }
-
-        #chatbox {
-            border: 1px solid #ccc;
-            padding: 15px;
-            height: 350px;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
-        .message {
-            margin-bottom: 12px;
-        }
-
-        .user-msg {
-            color: #003366;
-        }
-
-        .bot-msg {
-            color: #00695c;
-        }
-
-        #input-form {
-            display: flex;
-            gap: 10px;
-            justify-content: space-between;
-        }
-
-        #question {
-            flex-grow: 1;
-            padding: 12px;
-            font-size: 14px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-
-        button[type="submit"] {
-            padding: 12px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        button[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                margin: 30px 15px;
-                padding: 20px;
-            }
-
-            #input-form {
-                flex-direction: column;
-            }
-
-            #question, button[type="submit"] {
-                width: 100%;
-            }
+        .bot-heading {
+            font-weight: 700;
+            font-size: 16px;
+            margin: 10px 0 6px 0;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>💬 IIT Indore Chatbot</h1>
+    
+<body class="app-bg">
+    <div class="page-wrap">
+        {% include 'navigation/_topbar.html' %}
+        <main class="page-main">
+            <div class="chat-card">
+                <div class="chat-header">
+                    <h1 class="page-title">💬 IIT Indore Chatbot</h1>
+                    <p class="page-subtitle" style="margin-bottom:0;">
+                        Ask anything about campus life, academics, or events.
+                    </p>
+                </div>
+                <div id="chatbox">
+                    <div class="chat-empty" id="chat-empty-state">
+                        <span class="icon">🤖</span>
+                        Start the conversation — ask about hostels,
+                        timings, fees, academics, or emergency numbers.
+                    </div>
+                </div>
+                <form id="input-form" method="post" action="">
+                    {% csrf_token %}
+                    <input
+                        type="text"
+                        id="question"
+                        name="question"
+                        placeholder="Ask something about IIT Indore..."
+                        autocomplete="off"
+                        required
+                    >
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="send-btn"
+                    >
+                        Send
+                    </button>
 
-        <div class="nav-links">
-            <a href="{% url 'home' %}">🏠 Home</a> |
-            <a href="{% url 'logout' %}">🚪 Logout</a>
-        </div>
+                </form>
 
-        <div id="chatbox"></div>
+            </div>
 
-        <form id="input-form" method="post" action="">
-            {% csrf_token %}
-            <input type="text" id="question" name="question" placeholder="Ask something about IIT Indore..." required>
-            <button type="submit">Send</button>
-        </form>
+        </main>
+
+        <footer class="app-footer">
+            Built for the IIT Indore community 💙
+        </footer>
+
     </div>
-
     <script>
         const form = document.getElementById('input-form');
         const chatbox = document.getElementById('chatbox');
+        const sendBtn = document.getElementById('send-btn');
+        const emptyState = document.getElementById('chat-empty-state');
+        function scrollToBottom() {
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const formData = new FormData(form);
-            const question = formData.get('question');
-
-            chatbox.innerHTML += `<div class="message user-msg"><strong>You:</strong> ${question}</div>`;
             chatbox.scrollTop = chatbox.scrollHeight;
 
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
+        }
+        function escapeHtml(str) {
 
-            const data = await response.json();
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
 
-            if (data.error) {
-                chatbox.innerHTML += `<div class="message bot-msg"><strong>Error:</strong> ${data.error}</div>`;
-            } else {
-                chatbox.innerHTML += `<div class="message bot-msg"><strong>Bot:</strong> ${data.response}</div>`;
+        }
+
+        function inlineMarkdown(line) {
+
+            let result = line;
+            result = result.replace(
+                /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+                '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+            );
+
+
+            
+            result = result.replace(
+                /\*\*(.+?)\*\*/g,
+                '<strong>$1</strong>'
+            );
+
+            result = result.replace(
+                /`([^`]+?)`/g,
+                '<code>$1</code>'
+            );
+            result = result.replace(
+                /(^|[^*])\*(?!\*)([^*]+?)\*(?!\*)/g,
+                '$1<em>$2</em>'
+            );
+            result = result.replace(
+                /(^|[\s>])(https?:\/\/[^\s<]+)/g,
+                '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>'
+            );
+
+
+            return result;
+
+        }
+        function isTableRow(line) {
+            const trimmed = line.trim();
+            return (
+                trimmed.startsWith('|') &&
+                trimmed.endsWith('|')
+            );
+        }
+
+        function isTableSeparator(line) {
+
+            if (!isTableRow(line)) {
+                return false;
             }
 
-            chatbox.scrollTop = chatbox.scrollHeight;
-            form.reset();
-        });
+            const cells = line
+                .trim()
+                .replace(/^\|/, '')
+                .replace(/\|$/, '')
+                .split('|');
+
+            return cells.length > 0 &&
+                cells.every(cell =>
+                    /^:?-{3,}:?$/.test(cell.trim())
+                );
+
+        }
+
+        function getTableCells(line) {
+
+            return line
+                .trim()
+                .replace(/^\|/, '')
+                .replace(/\|$/, '')
+                .split('|')
+                .map(cell => cell.trim());
+
+        }
+        function formatMessage(raw) {
+
+            const escaped = escapeHtml(raw);
+
+            const lines = escaped.split(/\r?\n/);
+
+            let html = '';
+
+            let listType = null;
+
+            let inTable = false;
+
+
+            function closeList() {
+
+                if (listType) {
+
+                    html += `</${listType}>`;
+
+                    listType = null;
+
+                }
+
+            }
+
+
+            function closeTable() {
+
+                if (inTable) {
+
+                    html += '</tbody></table></div>';
+
+                    inTable = false;
+
+                }
+
+            }
+
+
+            for (let i = 0; i < lines.length; i++) {
+
+                const line = lines[i];
+
+                const trimmed = line.trim();
+                if (
+                    isTableRow(line) &&
+                    i + 1 < lines.length &&
+                    isTableSeparator(lines[i + 1])
+                ) {
+                    closeList();
+                    closeTable();
+                    const headers = getTableCells(line);
+                    html += '<div class="table-wrap">';
+                    html += '<table>';
+                    html += '<thead>';
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<th>${inlineMarkdown(header)}</th>`;
+                    });
+                    html += '</tr>';
+                    html += '</thead>';
+                    html += '<tbody>';
+                    inTable = true;
+                    i++;
+                    continue;
+                }
+                if (inTable && isTableRow(line)) {
+                    const cells = getTableCells(line);
+                    html += '<tr>';
+                    cells.forEach(cell => {
+                        html += `<td>${inlineMarkdown(cell)}</td>`;
+                    });
+                    html += '</tr>';
+                    continue;
+                }
+                if (inTable) {
+                    closeTable();
+                }
+                const bulletMatch =
+                    trimmed.match(/^[-*]\s+(.*)/);
+
+                const numberedMatch =
+                    trimmed.match(/^\d+[.)]\s+(.*)/);
+
+                if (bulletMatch) {
+                    if (listType !== 'ul') {
+                        closeList();
+                        html += '<ul>';
+                        listType = 'ul';
+                    }
+                    html += `<li>${inlineMarkdown(
+                        bulletMatch[1]
+                    )}</li>`;
+
+                }
+                else if (numberedMatch) {
+                    if (listType !== 'ol') {
+                        closeList();
+                        html += '<ol>';
+                        listType = 'ol';
+                    }
+                    html += `<li>${inlineMarkdown(
+                        numberedMatch[1]
+                    )}</li>`;
+                }
+                else if (trimmed === '') {
+                    closeList();
+                    html += '<br>';
+                }
+                else if (/^#{1,6}\s+/.test(trimmed)) {
+                    closeList();
+                    const heading =
+                        trimmed.replace(/^#{1,6}\s+/, '');
+                    html += `
+                        <div class="bot-heading">
+                            ${inlineMarkdown(heading)}
+                        </div>
+                    `;
+                }
+                else {
+                    closeList();
+                    html += `
+                        <p>
+                            ${inlineMarkdown(trimmed)}
+                        </p>
+                    `;
+                }
+            }
+            closeList();
+            closeTable();
+            return html;
+        }
+        function addBubble(text, who) {
+            if (emptyState) {
+                emptyState.remove();
+            }
+            const row =
+                document.createElement('div');
+            row.className =
+                `bubble-row ${
+                    who === 'user'
+                        ? 'user-row'
+                        : 'bot-row'
+                }`;
+            const avatar =
+                document.createElement('div');
+            avatar.className =
+                `avatar ${
+                    who === 'user'
+                        ? 'user-avatar'
+                        : 'bot-avatar'
+                }`;
+            avatar.textContent =
+                who === 'user'
+                    ? '🎓'
+                    : '🤖';
+            const bubble =
+                document.createElement('div');
+            bubble.className =
+                `bubble ${
+                    who === 'user'
+                        ? 'user-bubble'
+                        : who === 'error'
+                            ? 'error-bubble'
+                            : 'bot-bubble'
+                }`;
+            if (who === 'user') {
+                bubble.textContent = text;
+            }
+            else {
+                bubble.innerHTML =
+                    formatMessage(text);
+            }
+            row.appendChild(avatar);
+            row.appendChild(bubble);
+            chatbox.appendChild(row);
+            scrollToBottom();
+            return row;
+        }
+        function addTypingIndicator() {
+            const row =
+                document.createElement('div');
+            row.className =
+                'bubble-row bot-row';
+            row.id =
+                'typing-row';
+            const avatar =
+                document.createElement('div');
+            avatar.className =
+                'avatar bot-avatar';
+            avatar.textContent =
+                '🤖';
+            const bubble =
+                document.createElement('div');
+            bubble.className =
+                'bubble bot-bubble';
+            bubble.innerHTML = `
+                <span class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+            `;
+            row.appendChild(avatar);
+            row.appendChild(bubble);
+            chatbox.appendChild(row);
+            scrollToBottom();
+        }
+        function removeTypingIndicator() {
+            const row =
+                document.getElementById('typing-row');
+            if (row) {
+                row.remove();
+            }
+        }
+        form.addEventListener(
+            'submit',
+            async (e) => {
+                e.preventDefault();
+                const formData =
+                    new FormData(form);
+                const question =
+                    formData.get('question');
+                if (
+                    !question ||
+                    !question.trim()
+                ) {
+                    return;
+                }
+                addBubble(
+                    question,
+                    'user'
+                );
+                form.reset();
+                sendBtn.disabled = true;
+                addTypingIndicator();
+                try {
+                    const response =
+                        await fetch(
+                            form.action,
+                            {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-Requested-With':
+                                        'XMLHttpRequest'
+                                }
+                            }
+                        );
+                    const data =
+                        await response.json();
+                    removeTypingIndicator();
+                    if (data.error) {
+                        addBubble(
+                            data.error,
+                            'error'
+                        );
+                    }
+                    else {
+                        addBubble(
+                            data.response,
+                            'bot'
+                        );
+                    }
+                }
+                catch (err) {
+                    removeTypingIndicator();
+                    addBubble(
+                        'Something went wrong. Please try again.',
+                        'error'
+                    );
+                }
+                finally {
+                    sendBtn.disabled = false;
+                }
+            }
+        );
     </script>
 </body>
 </html>
