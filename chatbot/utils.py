@@ -234,6 +234,102 @@ def grade_documents(state):
         "documents": filtered_docs
     }
 
+# ============================================================
+# RAG ANSWERABILITY CHECK
+# ============================================================
+
+answerability_prompt = ChatPromptTemplate.from_messages([
+    (
+        "system",
+        """You are an answerability checker for an IIT Indore chatbot.
+
+Determine whether the retrieved context contains enough factual
+information to answer the user's question.
+
+Rules:
+- Answer YES only if the context contains enough information to
+  directly answer the question.
+- Answer NO if the context is unrelated, only partially relevant,
+  too vague, or does not contain the requested information.
+- Do not use outside knowledge.
+- Do not try to answer the question.
+- Return ONLY one word: YES or NO.
+"""
+    ),
+    (
+        "human",
+        """Question:
+{question}
+
+Retrieved context:
+{context}
+
+Can the question be answered using ONLY this context?
+
+Answer YES or NO."""
+    )
+])
+
+answerability_chain = answerability_prompt | llm
+
+
+def check_rag_answerability(state):
+    logger.info("---CHECK RAG ANSWERABILITY---")
+
+    question = state["question"]
+    documents = state.get("documents", [])
+
+    # No documents means RAG definitely cannot answer.
+    if not documents:
+        logger.info(
+            "No RAG documents → WEB SEARCH"
+        )
+
+        return {
+            "question": question,
+            "rag_answerable": False
+        }
+
+    context = rag.build_context(documents)
+
+    raw = answerability_chain.invoke({
+        "question": question,
+        "context": context
+    })
+
+    decision = (
+        raw.content.strip().upper()
+        if hasattr(raw, "content")
+        else str(raw).strip().upper()
+    )
+
+    # Be strict. Only an explicit YES counts as answerable.
+    answerable = decision == "YES"
+
+    logger.info(
+        "RAG answerability decision: %s",
+        "ANSWERABLE" if answerable else "NOT ANSWERABLE"
+    )
+
+    return {
+        "question": question,
+        "documents": documents,
+        "rag_answerable": answerable
+    }
+
+
+def decide_after_answerability(state):
+    if state.get("rag_answerable", False):
+        logger.info(
+            "RAG context can answer question → GENERATE"
+        )
+        return "generate"
+
+    logger.info(
+        "RAG context cannot answer question → WEB SEARCH"
+    )
+    return "web_search"
+
 
 # ============================================================
 # 6. ROUTER
@@ -272,8 +368,21 @@ def route_question(state):
 
 def decide_to_generate(state):
     logger.info("---ASSESS GRADED DOCUMENTS---")
+
     documents = state.get("documents", [])
-    return "generate" if documents else "web_search"
+
+    if not documents:
+        logger.info(
+            "No sufficiently relevant RAG documents → WEB SEARCH"
+        )
+        return "web_search"
+
+    logger.info(
+        "Relevant RAG documents found (%d) → GENERATE",
+        len(documents)
+    )
+
+    return "generate"
 
 
 # ============================================================
@@ -364,7 +473,10 @@ workflow.add_node("retrieve", retrieve)
 workflow.add_node("web_search", web_search)
 workflow.add_node("grade_documents", grade_documents)
 workflow.add_node("generate", generate)
-
+workflow.add_node(
+    "check_rag_answerability",
+    check_rag_answerability
+)
 workflow.add_edge(START, "check_memory")
 
 def route_after_memory(state):
@@ -395,9 +507,14 @@ workflow.add_conditional_edges(
 
 workflow.add_edge("retrieve", "grade_documents")
 
-workflow.add_conditional_edges(
+workflow.add_edge(
     "grade_documents",
-    decide_to_generate,
+    "check_rag_answerability"
+)
+
+workflow.add_conditional_edges(
+    "check_rag_answerability",
+    decide_after_answerability,
     {
         "generate": "generate",
         "web_search": "web_search",
