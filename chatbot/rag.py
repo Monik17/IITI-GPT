@@ -21,7 +21,7 @@ RETRIEVAL_TOP_K = 5
 
 # Cosine-distance cutoff (chromadb's default metric). Lower distance = closer
 # match. 0.5 keeps genuinely relevant chunks and drops unrelated ones.
-RELEVANCE_DISTANCE_THRESHOLD = 0.5
+RELEVANCE_DISTANCE_THRESHOLD = 0.4
 
 # Question is routed to a live web search instead of the vector DB only when
 # it's genuinely time-sensitive — everything else, including questions that
@@ -73,17 +73,42 @@ def retrieve_documents(question: str, top_k: int = RETRIEVAL_TOP_K):
     return documents
 
 
-def filter_relevant(documents, threshold: float = RELEVANCE_DISTANCE_THRESHOLD):
-    """Drop chunks whose cosine distance is above the relevance threshold.
-    Documents without a distance field (e.g. dict-shaped web-search results)
-    are kept as-is rather than filtered."""
+def filter_relevant(
+    documents,
+    threshold: float = RELEVANCE_DISTANCE_THRESHOLD
+    ):
+    """
+    Keep only genuinely relevant ChromaDB documents.
+
+    Lower cosine distance = better semantic match.
+
+    Web-search documents do not contain relevance_distance,
+    so they are kept unchanged.
+    """
+
     filtered = []
+
     for doc in documents:
-        distance = doc.metadata.get("relevance_distance") if isinstance(doc, Document) else None
-        if distance is None or distance <= threshold:
+
+        # Only ChromaDB documents have relevance_distance
+        if isinstance(doc, Document):
+
+            distance = doc.metadata.get("relevance_distance")
+
+            if distance is not None and distance <= threshold:
+
+                filtered.append(doc)
+
+        else:
+            # Web-search result
             filtered.append(doc)
 
-    logger.info(f"Kept {len(filtered)}/{len(documents)} documents after relevance filtering")
+    logger.info(
+        "Kept %d/%d documents after relevance filtering",
+        len(filtered),
+        len(documents)
+    )
+
     return filtered
 
 
