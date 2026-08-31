@@ -1,133 +1,47 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IIT Indore Chatbot - Navigation</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(to right, #e0f7fa, #f0f4ff);
-        }
-
-        .container {
-            max-width: 700px;
-            margin: 60px auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .icon {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 15px;
-        }
-
-        h1 {
-            color: #003366;
-            margin-bottom: 10px;
-        }
-
-        a {
-            text-decoration: none;
-            color: #007bff;
-            font-size: 14px;
-            position: absolute;
-            top: 20px;
-            right: 30px;
-        }
-
-        form {
-            margin-top: 30px;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-top: 20px;
-            color: #333;
-        }
-
-        input {
-            width: 90%;
-            max-width: 400px;
-            padding: 12px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        button {
-            margin-top: 25px;
-            padding: 12px 30px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        #map-frame {
-            margin-top: 30px;
-            width: 100%;
-            height: 500px;
-            border: none;
-            display: none;
-            border-radius: 8px;
-        }
-
-        .error {
-            color: red;
-            margin-top: 15px;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                margin: 30px 15px;
-                padding: 20px;
-            }
-
-            input, button {
-                width: 100%;
-            }
-
-            a {
-                top: 15px;
-                right: 15px;
-            }
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
 </head>
-<body>
-    <div class="container">
-        <a href="{% url 'logout' %}">Logout</a>
-        <img src="/static/images/app_icon.png" alt="IIT Indore Chatbot Icon" class="icon">
-        <h1>IIT Indore Navigation</h1>
+<body class="app-bg">
+    <div class="page-wrap">
+        {% include 'navigation/_topbar.html' %}
 
-        <form id="nav-form">
-            <label for="start">Start Location:</label>
-            <input type="text" id="start" name="start" placeholder="e.g., VSB Hostel" required>
+        <main class="page-main">
+            <div class="card medium card-center">
+                <div class="logo-badge">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#fff"/>
+                        <circle cx="12" cy="9" r="2.5" fill="#2f5fe0"/>
+                    </svg>
+                </div>
+                <h1 class="page-title">Campus Navigation</h1>
+                <p class="page-subtitle">Enter two campus locations to get a walking map between them.</p>
 
-            <label for="end">End Location:</label>
-            <input type="text" id="end" name="end" placeholder="e.g., LRC" required>
+                <form id="nav-form">
+                    <div class="field">
+                        <label for="start">Start Location</label>
+                        <input type="text" id="start" name="start" placeholder="e.g., VSB Hostel" required>
+                    </div>
+                    <div class="field">
+                        <label for="end">End Location</label>
+                        <input type="text" id="end" name="end" placeholder="e.g., LRC" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Get Map</button>
+                </form>
 
-            <button type="submit">Get Map</button>
-        </form>
+                <div id="error"></div>
+                <iframe id="map-frame" class="map-frame" src=""></iframe>
+            </div>
+        </main>
 
-        <div id="error" class="error"></div>
-        <iframe id="map-frame" src=""></iframe>
+        <footer class="app-footer">Built for the IIT Indore community 💙</footer>
     </div>
 
     <script>
@@ -137,9 +51,12 @@
             const end = document.getElementById('end').value.trim();
             const errorDiv = document.getElementById('error');
             const mapFrame = document.getElementById('map-frame');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
 
-            errorDiv.textContent = '';
+            errorDiv.innerHTML = '';
             mapFrame.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Finding route...';
 
             try {
                 const response = await fetch('/navigation/get_map/', {
@@ -150,13 +67,16 @@
                 const data = await response.json();
 
                 if (data.error) {
-                    errorDiv.textContent = data.error;
+                    errorDiv.innerHTML = `<p class="error">${data.error}</p>`;
                 } else {
                     mapFrame.src = data.map_url;
                     mapFrame.style.display = 'block';
                 }
             } catch (err) {
-                errorDiv.textContent = 'An error occurred. Please try again.';
+                errorDiv.innerHTML = '<p class="error">An error occurred. Please try again.</p>';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Get Map';
             }
         });
     </script>

@@ -1,179 +1,77 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IIT Indore Chatbot - Reminders</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #e0f7fa, #f0f4ff);
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: 50px auto;
-            background-color: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .app-icon {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 15px;
-        }
-
-        h1, h2 {
-            color: #003366;
-        }
-
-        a {
-            color: #007bff;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        form {
-            margin-top: 20px;
-            text-align: left;
-        }
-
-        label {
-            font-weight: 600;
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        button {
-            margin-top: 20px;
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .error {
-            color: red;
-            margin-top: 10px;
-        }
-
-        .success {
-            color: green;
-            margin-top: 10px;
-        }
-
-        table {
-            width: 100%;
-            margin-top: 30px;
-            border-collapse: collapse;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        th, td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-            color: #003366;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                margin: 30px 20px;
-                padding: 20px;
-            }
-
-            button {
-                font-size: 14px;
-            }
-        }
-    </style>
-
-    <audio id="alarmSound" src="/static/images/beep-01a.mp3" preload="auto"></audio>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    <audio id="alarmSound" src="{% static 'images/beep-01a.mp3' %}" preload="auto"></audio>
 </head>
-<body>
-    <div class="container">
-        <img src="/static/images/reminder.jpeg" alt="Chatbot Icon" class="app-icon">
-        <h1>Reminders</h1>
-        <div>
-            <a href="{% url 'home' %}">🏠 Home</a> | 
-            <a href="{% url 'logout' %}">🚪 Logout</a>
-        </div>
+<body class="app-bg">
+    <div class="page-wrap">
+        {% include 'navigation/_topbar.html' %}
 
-        {% if messages %}
-            {% for message in messages %}
-                <p class="{{ message.tags }}">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
+        <main class="page-main">
+            <div class="card medium card-center">
+                <div class="logo-badge">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C9.24 2 7 4.24 7 7v5l-2 3v1h14v-1l-2-3V7c0-2.76-2.24-5-5-5z" fill="#fff"/>
+                        <path d="M10 20c0 1.1.9 2 2 2s2-.9 2-2" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h1 class="page-title">Reminders</h1>
+                <p class="page-subtitle">Never miss a deadline, meeting, or mess timing.</p>
 
-        <form method="post">
-            {% csrf_token %}
-            <label for="reminder_text">Reminder Text:</label>
-            <input type="text" id="reminder_text" name="reminder_text" required>
-
-            <label for="reminder_date">Date & Time (YYYY-MM-DD HH:MM):</label>
-            <input type="text" id="reminder_date" name="reminder_date"
-                   placeholder="e.g., 2025-07-05 17:30"
-                   pattern="\d{4}-\d{2}-\d{2} \d{2}:\d{2}"
-                   title="Use format YYYY-MM-DD HH:MM"
-                   required>
-
-            <button type="submit">Add Reminder</button>
-        </form>
-
-        {% if reminders %}
-            <h2>Your Reminders</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Text</th>
-                        <th>Date</th>
-                        <th>Created</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reminder in reminders %}
-                        <tr>
-                            <td>{{ reminder.reminder_text }}</td>
-                            <td>{{ reminder.reminder_date }}</td>
-                            <td>{{ reminder.created_at }}</td>
-                        </tr>
+                {% if messages %}
+                    {% for message in messages %}
+                        <p class="{{ message.tags }}">{{ message }}</p>
                     {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No reminders yet.</p>
-        {% endif %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label for="reminder_text">Reminder Text</label>
+                        <input type="text" id="reminder_text" name="reminder_text" placeholder="e.g., Submit assignment" required>
+                    </div>
+                    <div class="field">
+                        <label for="reminder_date">Date &amp; Time</label>
+                        <input type="text" id="reminder_date" name="reminder_date"
+                               placeholder="e.g., 2026-09-05 17:30"
+                               pattern="\d{4}-\d{2}-\d{2} \d{2}:\d{2}"
+                               title="Use format YYYY-MM-DD HH:MM"
+                               required>
+                        <span class="hint">Format: YYYY-MM-DD HH:MM</span>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Add Reminder</button>
+                </form>
+
+                <h2 class="section-title">Your Reminders</h2>
+                {% if reminders %}
+                    <div class="reminder-list">
+                        {% for reminder in reminders %}
+                            <div class="reminder-item" id="reminder-row-{{ reminder.id }}">
+                                <div class="info">
+                                    <span class="r-text">{{ reminder.reminder_text }}</span>
+                                    <span class="r-meta">⏰ {{ reminder.reminder_date }} &middot; added {{ reminder.created_at }}</span>
+                                </div>
+                                <button type="button" class="del-btn" title="Delete reminder" onclick="deleteReminder({{ reminder.id }})">✕</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <span class="icon">🗓️</span>
+                        No reminders yet. Add one above to get started.
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+
+        <footer class="app-footer">Built for the IIT Indore community 💙</footer>
     </div>
 
     <script>
@@ -186,6 +84,21 @@
         function playAlarm() {
             const alarm = document.getElementById('alarmSound');
             alarm.play().catch(err => console.warn("Alarm error:", err));
+        }
+
+        function deleteReminder(id) {
+            fetch(`/navigation/reminder/delete/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            }).then(res => {
+                if (res.ok) {
+                    const row = document.getElementById(`reminder-row-${id}`);
+                    if (row) row.remove();
+                }
+            });
         }
 
         // Check and trigger reminders

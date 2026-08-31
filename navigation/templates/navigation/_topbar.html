@@ -1,0 +1,35 @@
+{% url 'home' as home_url %}
+{% url 'chatbot' as chatbot_url %}
+{% url 'navigation_home' as navigation_url %}
+{% url 'reminder' as reminder_url %}
+
+<header class="topbar">
+    <a href="{% if request.session.user_roll_number %}{{ home_url }}{% else %}{% url 'login' %}{% endif %}" class="brand">
+        <svg class="logo-mark" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="topbar-logo-gradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#2f5fe0"/>
+                    <stop offset="1" stop-color="#22d3ee"/>
+                </linearGradient>
+            </defs>
+            <rect width="48" height="48" rx="14" fill="url(#topbar-logo-gradient)"/>
+            <path d="M24 12L38 18.5L24 25L10 18.5L24 12Z" fill="#fff"/>
+            <path d="M17 21.5V28C17 28 19.8 31 24 31C28.2 31 31 28 31 28V21.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        IITI-GPT
+    </a>
+
+    {% if request.session.user_roll_number %}
+        <nav>
+            <a href="{{ home_url }}" class="{% if request.path == home_url %}active{% endif %}">🏠 Home</a>
+            <a href="{{ chatbot_url }}" class="{% if request.path == chatbot_url %}active{% endif %}">💬 Chat</a>
+            <a href="{{ navigation_url }}" class="{% if request.path == navigation_url %}active{% endif %}">🧭 Navigate</a>
+            <a href="{{ reminder_url }}" class="{% if request.path == reminder_url %}active{% endif %}">🗓️ Reminders</a>
+            <a href="{% url 'logout' %}" class="logout-link">🚪 Logout</a>
+        </nav>
+    {% else %}
+        <nav>
+            <a href="{% url 'login' %}">Log In</a>
+        </nav>
+    {% endif %}
+</header>
