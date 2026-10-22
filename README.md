@@ -168,14 +168,6 @@ IITI-GPT/
 └── README.md
 ```
 
-## ⚠️ Current Limitations
-
-- **Prototype authentication:** The current custom `AppUser` implementation stores passwords without hashing. Replace it with Django's built-in authentication before any public deployment or use with real credentials.
-- **RAG dataset not included:** The vector database and its construction pipeline must be provided separately.
-- **Maps show location markers:** The existing Folium feature is not a turn-by-turn directions or route-optimization engine.
-- **Reminder notifications are page-dependent:** Browser checks run while the reminder page is open; this is not a background push-notification service.
-- **AI-generated answers need verification:** Current facts and placement statistics should be checked against authoritative IIT Indore sources.
-
 ## 📅 Planned Enhancements
 
 - 🧠 **University Database Integration:** Connect to official IIT Indore databases for real-time, authenticated information.
