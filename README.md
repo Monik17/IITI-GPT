@@ -20,30 +20,28 @@ IITI-GPT also brings campus navigation and personal reminders into one web appli
 
 ## 📸 Project Demo
 
-![IITI-GPT answering a question about cafes at IIT Indore](assets/screenshots/campus-cafes.png)
+![IITI-GPT answering a question about cafes at IIT Indore](assets/home.png)
+![IITI-GPT answering a question about cafes at IIT Indore](assets/chatbot.png)
+![IITI-GPT answering a question about cafes at IIT Indore](assets/login.png)
+![IITI-GPT answering a question about cafes at IIT Indore](assets/Navigation.png)
 ### 1. Campus information — cafés and food options
 
 The chatbot responds to campus-specific questions using relevant retrieved information.
 
-![IITI-GPT answering a question about cafes at IIT Indore](assets/screenshots/campus-cafes.png)
+![IITI-GPT answering a question about cafes at IIT Indore](assets/screenshots/demo_1.png)
 
-### 2. Structured answers — placement statistics
 
-The interface can present data-rich answers in a readable table. The values shown are from the captured demo response; they should be independently verified before being treated as official placement figures.
-
-![IITI-GPT placement statistics table](assets/screenshots/placement-table.png)
-
-### 3. Backend execution — terminal logs
+### 2. Backend execution — terminal logs
 
 These two terminal screenshots show the decision-making workflow executing behind the chat interface.
 
 **Terminal 1 — Conversation-memory check, local vector retrieval, and response generation**
 
-![IITI-GPT terminal showing memory classification and RAG retrieval](assets/screenshots/terminal-rag.png)
+![IITI-GPT terminal showing memory classification and RAG retrieval](assets/screenshots/terminal_1.png)
 
 **Terminal 2 — Routing to Tavily web search for information requiring external retrieval**
 
-![IITI-GPT terminal showing web search routing and generation](assets/screenshots/terminal-web.png)
+![IITI-GPT terminal showing web search routing and generation](assets/screenshots/terminal_2.png)
 
 ## 🏗️ How the Chatbot Works
 
