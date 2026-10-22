@@ -192,6 +192,36 @@ Important:
 ])
 
 router_chain = router_prompt | llm
+# ============================================================
+# 6. ROUTER
+# ============================================================
+
+def route_question(state):
+    logger.info("---LLM ROUTE QUESTION---")
+    question = state["question"]
+
+    raw = router_chain.invoke({"question": question})
+
+    decision = (
+        raw.content.strip().upper()
+        if hasattr(raw, "content")
+        else str(raw).strip().upper()
+    )
+
+    if "WEB" in decision:
+        decision = "WEB"
+    else:
+        decision = "RAG"
+
+    logger.info("LLM routing decision: %s", decision)
+
+    if decision == "WEB":
+        logger.info("Routing to Tavily web search")
+        return "web_search"
+
+    logger.info("Routing to local ChromaDB RAG")
+    return "vectorstore"
+
 
 # ============================================================
 # 3. RETRIEVAL
@@ -330,36 +360,6 @@ def decide_after_answerability(state):
     )
     return "web_search"
 
-
-# ============================================================
-# 6. ROUTER
-# ============================================================
-
-def route_question(state):
-    logger.info("---LLM ROUTE QUESTION---")
-    question = state["question"]
-
-    raw = router_chain.invoke({"question": question})
-
-    decision = (
-        raw.content.strip().upper()
-        if hasattr(raw, "content")
-        else str(raw).strip().upper()
-    )
-
-    if "WEB" in decision:
-        decision = "WEB"
-    else:
-        decision = "RAG"
-
-    logger.info("LLM routing decision: %s", decision)
-
-    if decision == "WEB":
-        logger.info("Routing to Tavily web search")
-        return "web_search"
-
-    logger.info("Routing to local ChromaDB RAG")
-    return "vectorstore"
 
 
 # ============================================================
